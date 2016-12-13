@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+    <script src="jquery.js"></script>
+    <script src="echarts.min.js"></script>
+
+</head>
+<body>
+
+<div id="main" style="width: 80%;height: 80%;"></div>
+
+<script>
+    // 基于准备好的dom，初始化echarts实例
+    var myChart = echarts.init(document.getElementById('main'));
+
+    // 指定图表的配置项和数据
+    $.ajax({
+        type: 'get',
+        cache: false,
+        dataType: 'json',
+        url: 'http://api.openweathermap.org/data/2.5/forecast?q=ShangHai,cn&mode=json&appid=2fdaada6ba75fb4f130be573e22202a7',
+        success: function (d) {
+            console.log(d);
+
+            var cityName = d.city.name;
+
+            //定义三个空的数组获取日期列表,最高气温列表,最低气温列表
+            var dataList = [], tempMin = [], tempMax = [];
+
+            $.each(d.list, function () {
+                dataList.push(this.dt_txt);
+                var ma = this.main.temp_max,mi = this.main.temp_min;
+                //使用json数据获得的温度是列氏度需要减去  273.15
+                tempMax.push(ma -273.15);
+                tempMin.push(mi -273.15);
+            });
+
+
+            var option = {
+                title: {
+                    text: cityName
+                },
+                tooltip: {
+                    trigger: 'axis'
+                },
+                legend: {
+                    data: ['最高气温', '最低气温']
+                },
+                toolbox: {
+                    show: true,
+                    feature: {
+                        mark: {show: true},
+                        dataView: {show: true, readOnly: false},
+                        magicType: {show: true, type: ['line', 'bar']},
+                        restore: {show: true},
+                        saveAsImage: {show: true}
+                    }
+                },
+                calculable: true,
+                xAxis: [
+                    {
+                        type: 'category',
+                        boundaryGap: false,
+                        data: dataList
+                    }
+                ],
+                yAxis: [
+                    {
+                        type: 'value',
+                        axisLabel: {
+                            formatter: '{value} °C'
+                        }
+                    }
+                ],
+                series: [
+                    {
+                        name: '最高气温',
+                        type: 'line',
+                        symbol: 'none',
+                        data: tempMax,
+                        markPoint: {
+                            data: [{type: 'max', name: '最大值'}, {type: 'min', name: '最小值'}]
+                        },
+                        markLine: {
+                            data: [{type: 'average', name: '平均值'}]
+                        }
+                    },
+                    {
+                        name: '最低气温',
+                        type: 'line',
+                        symbol: 'none',
+                        data: tempMin,
+                        markPoint: {
+                            data: [{name: '近日最低', value: -2, xAxis: 1, yAxis: -1.5}]
+                        },
+                        markLine: {
+                            data: [{type: 'average', name: '平均值'}]
+                        }
+                    }
+                ]
+            };
+            myChart.setOption(option);
+        }
+    })
+
+
+</script>
+
+
+</body>
+</html>

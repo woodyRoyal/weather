@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+    <script src="jquery.js"></script>
+    <script src="echarts.min.js"></script>
+
+</head>
+<body>
+
+<div id="main" style="width: 80%;height: 80%;"></div>
+
+<script>
+    // 基于准备好的dom，初始化echarts实例
+    var myChart = echarts.init(document.getElementById('main'));
+
+    // 指定图表的配置项和数据
+    $.ajax({
+        type: 'get',
+        cache: false,
+        dataType: 'xml',
+        //在openweather上面获取5天每三小时数据时会出现 min - max数据一样
+        //修改了获取地址http://api.openweathermap.org/data/2.5/forecast/daily?q=shanghai&mode=xml&units=metric&cnt=5&appid=2fdaada6ba75fb4f130be573e22202a7
+        //其中 q=shanghai  可以修改城市
+        //mode=xml 修改数据类型 可直接修改成json
+        //cnt=5 修改获取的天数 1-16天 可直接修改
+
+        url: 'http://api.openweathermap.org/data/2.5/forecast/daily?q=shanghai&mode=xml&units=metric&cnt=5&appid=2fdaada6ba75fb4f130be573e22202a7',
+        success: function (d) {
+            //获取城市的名字使用jquery获取dom的方式
+            var cityName = $(d).find('weatherdata>location>name')[0].innerHTML;
+
+            //定义三个空的数组获取日期列表,最高气温列表,最低气温列表
+            var datalist = [],tempMax = [],tempMin = [];
+
+            $(d).find('weatherdata>forecast>time').each(function () {
+                datalist.push($(this).attr('day'));
+                tempMin.push($(this).find('temperature').attr('min'));
+                tempMax.push($(this).find('temperature').attr('max'));
+            });
+
+            //echarts 绘图
+            var option = {
+                title: {
+                    text: cityName
+                },
+//                tooltip: {
+//                    trigger: 'axis'
+//                },
+                legend: {
+                    data: ['最高气温', '最低气温']
+                },
+                toolbox: {
+                    show: true,
+                    feature: {
+                        mark: {show: true},
+                        dataView: {show: true, readOnly: false},
+                        magicType: {show: true, type: ['line','bar']},
+                        restore: {show: true},
+                        saveAsImage: {show: true}
+                    }
+                },
+                calculable: true,
+                xAxis: [
+                    {
+                        type: 'category',
+                        boundaryGap: false,
+                        data: datalist
+                    }
+                ],
+                yAxis: [
+                    {
+                        type: 'value',
+                        axisLabel: {
+                            formatter: '{value} °C'
+                        }
+                    }
+                ],
+                series: [
+                    {
+                        name: '最高气温',
+                        type: 'line',
+                        symbol:'none',
+                        data: tempMax,
+                        markPoint: {
+                            data: [{type: 'max', name: '最大值'}, {type: 'min', name: '最小值'}]
+                        },
+                        markLine: {
+                            data: [{type: 'average', name: '平均值'}]
+                        }
+                    },
+                    {
+                        name: '最低气温',
+                        type: 'line',
+                        symbol:'none',
+                        data: tempMin,
+                        markPoint: {
+                            data: [{name: '近日最低', value: -2, xAxis: 1, yAxis: -1.5}]
+                        },
+                        markLine: {
+                            data: [{type: 'average', name: '平均值'}]
+                        }
+                    }
+                ]
+            };
+            myChart.setOption(option);
+        }
+    })
+
+
+</script>
+
+
+</body>
+</html>
